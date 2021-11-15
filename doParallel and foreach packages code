@@ -1,0 +1,66 @@
+library(parallel)
+library(MASS)
+library(microbenchmark)
+starts <- rep(100,4)
+fx <- function(nstart) kmeans(Boston, 4, nstart=nstart)
+numlogicalCores <- detectCores()
+numlogicalCores  # This computer (Dell) has 8 logical cores
+
+numphysicalCores <- detectCores(logical = FALSE)
+numphysicalCores # This computer (Dell) has 4 physical cores
+
+microbenchmark(lapply(starts, fx))
+
+library(foreach)
+library(doParallel)
+library(tictoc)
+registerDoParallel(8) # The registerDoParallel function is used to register the parallel backend with the foreach package
+getDoParWorkers()
+
+getDoParName()
+
+getDoParVersion()
+
+x <- iris[which(iris[,5] != "setosa"), c(1,5)]
+trials <- 10000
+tic()
+### Parallel (%dopar%)
+bs1 <- foreach(icount(trials), .combine=cbind) %dopar% { 
+  ind <- sample(100, 100, replace=TRUE) 
+  result1 <- glm(x[ind,2]~x[ind,1], family=binomial(logit)) 
+  coefficients(result1) 
+}
+toc()
+
+tic()
+### Parallel (%dopar%)
+bs1 <- foreach(icount(trials), .combine=cbind) %dopar% { 
+  ind <- sample(100, 100, replace=TRUE) 
+  result1 <- glm(x[ind,2]~x[ind,1], family=binomial(logit)) 
+  coefficients(result1) 
+}
+toc()
+
+tic()
+### Not parallel (%do%)
+bs2 <- foreach(icount(trials), .combine=cbind) %do% { 
+  ind <- sample(100, 100, replace=TRUE) 
+  result1 <- glm(x[ind,2]~x[ind,1], family=binomial(logit)) 
+  coefficients(result1) 
+} 
+toc()
+
+bs1 <- t(bs1)
+bs2 <- t(bs2)
+
+apply(bs1,2,mean)
+
+apply(bs2,2,mean)
+
+apply(bs1,2,var)
+
+apply(bs2,2,var)
+
+apply(bs1,2,hist)
+
+apply(bs2,2,hist)
