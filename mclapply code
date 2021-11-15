@@ -1,0 +1,46 @@
+#library(parallel)
+library(tictoc)
+detectCores() # 8 logical cores
+
+detectCores(logical = FALSE) # 4 physical cores
+
+# create random normal distribution data to bootstrap sample from
+
+
+sample_data = rnorm(1000000, mean=10, sd=5)    # provide our own mean and standard deviation
+
+hist(sample_data)
+
+summary(sample_data)
+
+
+
+
+# summary(bootstrap_nonparallel)
+# 
+# quantile(bootstrap_nonparallel, c(0.025, 0.975))  # get the quantiles
+
+# Do a normal bootstrap with the replicate function, which is a version of the 
+# lapply function
+set.seed(1)
+tic()
+bootstrap_nonparallel <- replicate(5000, {
+          x_samples <- sample(sample_data, 200000, replace = TRUE)
+          median(x_samples)
+          })
+toc()
+
+# Now do the parallel bootstrap with the mclapply function
+
+RNGkind("L'Ecuyer-CMRG")
+set.seed(1)
+tic()
+bootstrap_parallel <- mclapply(1:5000, function(i) {
+           x_samples <- sample(sample_data,  200000, replace = TRUE)
+           median(x_samples)
+   }, mc.cores = 8)
+toc()
+
+
+bootstrap_parallel <- unlist(bootstrap_parallel)  ## Collapse list into vector for the parallel bootstrap
+quantile(bootstrap_parallel, c(0.025, 0.975))
